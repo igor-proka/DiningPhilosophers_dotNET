@@ -7,7 +7,7 @@ namespace DiningPhilosophers.Core.Models
         public string Name { get; }
         public PhilosopherState State { get; set; } = PhilosopherState.Thinking;
 
-        // оставшиеся шаги в текущем состоянии (thinking/eating)
+        // Оставшиеся шаги в текущем состоянии (thinking/eating)
         public int StepsRemaining { get; set; } = 0;
         
         // Флаги владения вилками (модель знает только о своих вилках)

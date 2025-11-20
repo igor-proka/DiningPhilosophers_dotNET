@@ -45,7 +45,7 @@ namespace DiningPhilosophers.App
             var config = new SimulationConfig
             {
                 UseCoordinator = true,
-                CoordinatorType = CoordinatorType.Stupid
+                CoordinatorType = CoordinatorType.Semaphore
             };
 
             var strategyFactory = new StrategyFactory();

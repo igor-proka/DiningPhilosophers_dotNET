@@ -45,10 +45,10 @@ namespace DiningPhilosophers.Services.Monitor
             Console.WriteLine($"Всего съедено: {result.TotalMeals}");
             Console.WriteLine($"Пропускная способность (всего): {result.ThroughputPer1000:0.###} meals per 1000 steps");
 
-            // throughput per philosopher + average
+            // Пропускная способность по каждому философу + среднее
             Console.WriteLine("\nПропускная способность по философам (meals per 1000 steps):");
             var throughputs = new List<double>();
-            foreach (var kv in result.WaitingTimes) // use names from result.WaitingTimes keys (all philosophers)
+            foreach (var kv in result.WaitingTimes)
             {
                 var name = kv.Key;
                 var pm = metrics.GetPhilosopherMetrics(name);
@@ -60,7 +60,7 @@ namespace DiningPhilosophers.Services.Monitor
             double avgThroughput = throughputs.Count == 0 ? 0.0 : throughputs.Average();
             Console.WriteLine($"Средняя пропускная способность: {avgThroughput:0.###} meals per 1000 steps");
 
-            // Waiting: per-philosopher, average, max + who
+            // Время ожидания: по философу, среднее, максимальное + кто
             Console.WriteLine("\nВремя ожидания (в шагах):");
             var waits = new List<long>();
             foreach (var kv in result.WaitingTimes)
@@ -75,7 +75,7 @@ namespace DiningPhilosophers.Services.Monitor
             Console.WriteLine($"\nСреднее время ожидания: {avgWait:0.##} steps");
             Console.WriteLine($"Максимальное время ожидания: {maxWait} steps (философ: {whoMax})");
 
-            // Fork utilizations: detailed percentages free/blocked/inuse
+            // Утилизация вилок: сколько процентов времени вилка свободна/заблокирована/используется для еды (free/blocked/inuse)
             Console.WriteLine("\nКоэффициенты утилизации вилок (проценты времени):");
             foreach (var kv in result.ForkUtilizations.OrderBy(k => k.Key))
             {
