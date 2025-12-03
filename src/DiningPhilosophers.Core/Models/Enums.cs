@@ -28,4 +28,10 @@ namespace DiningPhilosophers.Core.Models
         Stupid,      // Специально создаёт дедлок
         Semaphore
     }
+
+    public enum SimulationType
+    {
+        StepByStep,
+        Multithreaded
+    }
 }

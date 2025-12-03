@@ -38,7 +38,7 @@ namespace DiningPhilosophers.Services.Monitor
         public void DisplaySummary(IMetricsCollector metrics, SimulationResult result)
         {
             Console.WriteLine("\n" + new string('=', 50));
-            Console.WriteLine("ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ");
+            Console.WriteLine("ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ ДЛЯ ПОШАГОВОЙ СИМУЛЯЦИИ");
             Console.WriteLine(new string('=', 50));
 
             Console.WriteLine($"Общее количество шагов: {result.TotalSteps}");
@@ -75,18 +75,12 @@ namespace DiningPhilosophers.Services.Monitor
             Console.WriteLine($"\nСреднее время ожидания: {avgWait:0.##} steps");
             Console.WriteLine($"Максимальное время ожидания: {maxWait} steps (философ: {whoMax})");
 
-            // Утилизация вилок: сколько процентов времени вилка свободна/заблокирована/используется для еды (free/blocked/inuse)
+            // Утилизация вилок: сколько процентов времени вилка свободна/заблокирована/используется для еды (free/blocked/in_use)
             Console.WriteLine("\nКоэффициенты утилизации вилок (проценты времени):");
             foreach (var kv in result.ForkUtilizations.OrderBy(k => k.Key))
             {
-                int forkId = kv.Key;
-                var fm = metrics.GetForkMetrics(forkId);
-                double total = Math.Max(1.0, fm.TotalObservedSteps);
-                double pctFree = 100.0 * fm.StepsFree / total;
-                double pctBlocked = 100.0 * fm.StepsBlocked / total;
-                double pctInUse = 100.0 * fm.StepsInUse / total;
-
-                Console.WriteLine($"  Fork-{forkId}: free={pctFree:0.00}% blocked={pctBlocked:0.00}% eating={pctInUse:0.00}% (Observed={fm.TotalObservedSteps})");
+                Console.WriteLine(
+                    $"  Fork-{kv.Key}: free={kv.Value.FreePct:0.00}%  blocked={kv.Value.BlockedPct:0.00}%  eating={kv.Value.InUsePct:0.00}%");
             }
 
             if (!string.IsNullOrEmpty(result.DeadlockInfo))
