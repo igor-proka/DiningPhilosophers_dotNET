@@ -23,6 +23,7 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
         private SimulationResult _result = new SimulationResult();
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly DateTime _startTime;
+        private readonly DeadlockChecker _deadlockChecker;
 
         public MultithreadedSimulationEngine(
             MultithreadedSimulationConfig config,
@@ -40,6 +41,7 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             _metricsAdapter = new MultithreadedToMetricsAdapter(_metrics);
             _cancellationTokenSource = new CancellationTokenSource();
             _startTime = DateTime.Now;
+            _deadlockChecker = new DeadlockChecker();
         }
 
         public async void Run(IEnumerable<Philosopher> philosophers, IList<Fork> forks)
@@ -152,13 +154,8 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             return FinalizeSimulation();
         }
 
-        private bool CheckDeadlock(IList<Philosopher> philosophers)
-        {
-            if (philosophers.Count == 0) return false;
-            
-            return philosophers.All(p => p.State == PhilosopherState.Hungry) &&
-                   philosophers.All(p => p.HasLeftFork ^ p.HasRightFork);
-        }
+        public bool CheckDeadlock(IList<Philosopher> philosophers) => 
+            _deadlockChecker.CheckDeadlock(philosophers);
 
         private ThreadSafeFork GetLeftFork(int philosopherIndex)
         {
@@ -172,56 +169,12 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
 
         private SimulationResult FinalizeSimulation()
         {
-            var totalMilliseconds = _config.DurationSeconds * 1000;
-            _result.TotalSteps = _config.DurationSeconds;
-
-            // meals
-            _result.TotalMeals = _philosophers.Sum(p => _metrics.GetPhilosopherMetrics(p.Name).MealsEaten);
-            _result.ThroughputPer1000 = _result.TotalMeals * 1000.0 / Math.Max(1, totalMilliseconds);
-
-            // waiting times
-            foreach (var p in _philosophers)
-            {
-                var pm = _metrics.GetPhilosopherMetrics(p.Name);
-                _result.WaitingTimes[p.Name] = pm.TotalWaitingTimeMs;
-                _result.WaitingEpisodes[p.Name] = pm.HungerEpisodes;
-            }
-
-            const double stepDurationMs = 10.0; // UpdateMetrics() period
-
-            // fork metrics
-            foreach (var f in _forks)
-            {
-                var fm = _metrics.GetForkMetrics(f.Id);
-
-                double freeMs = fm.StepsFree * stepDurationMs;
-                double blockedMs = fm.StepsBlocked * stepDurationMs;
-                double inUseMs = fm.StepsInUse * stepDurationMs;
-
-                double totalMs = totalMilliseconds;
-
-                double pctFree = (freeMs / totalMs) * 100.0;
-                double pctBlocked = (blockedMs / totalMs) * 100.0;
-                double pctInUse = (inUseMs / totalMs) * 100.0;
-
-                // Нормализация на случай мелких погрешностей
-                double sum = pctFree + pctBlocked + pctInUse;
-                if (sum > 0)
-                {
-                    pctFree = pctFree * 100.0 / sum;
-                    pctBlocked = pctBlocked * 100.0 / sum;
-                    pctInUse = pctInUse * 100.0 / sum;
-                }
-
-                _result.ForkUtilizations[f.Id] = new ForkUtilizationInfo
-                {
-                    FreePct = pctFree,
-                    BlockedPct = pctBlocked,
-                    InUsePct = pctInUse
-                };
-            }
-
-            return _result;
+            var calculator = new SimulationResultCalculator();
+            return calculator.CalculateForMultithreaded(
+                _metrics, 
+                _philosophers, 
+                _forks, 
+                _config.DurationSeconds * 1000);
         }
 
         public MultithreadedMetricsCollector GetMetrics() => _metrics;

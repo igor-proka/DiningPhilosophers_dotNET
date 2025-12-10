@@ -1,4 +1,3 @@
-// DiningPhilosophers.Core/Models/MultithreadedPhilosopherMetrics.cs
 namespace DiningPhilosophers.Core.Models
 {
     public class MultithreadedPhilosopherMetrics

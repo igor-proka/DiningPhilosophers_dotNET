@@ -9,11 +9,13 @@ namespace DiningPhilosophers.Services.Simulation
     {
         private readonly IPhilosopherStateProcessor _stateProcessor;
         private readonly ForkAcquisitionManager _acquisitionManager;
+        private readonly DeadlockChecker _deadlockChecker;
 
         public SimulationOrchestrator(IPhilosopherStateProcessor stateProcessor, ForkAcquisitionManager acquisitionManager)
         {
             _stateProcessor = stateProcessor;
             _acquisitionManager = acquisitionManager;
+            _deadlockChecker = new DeadlockChecker();
         }
 
         public void ExecuteStep(int step, IList<Philosopher> philosophers, IList<Fork> forks)
@@ -28,13 +30,8 @@ namespace DiningPhilosophers.Services.Simulation
             }
         }
 
-        public bool CheckDeadlock(IList<Philosopher> philosophers)
-        {
-            if (philosophers.Count == 0) return false;
-            
-            return philosophers.All(p => p.State == PhilosopherState.Hungry) &&
-                   philosophers.All(p => p.HasLeftFork ^ p.HasRightFork);
-        }
+        public bool CheckDeadlock(IList<Philosopher> philosophers) => 
+            _deadlockChecker.CheckDeadlock(philosophers);
 
         private Fork GetLeftFork(IList<Fork> forks, int philosopherIndex)
         {
