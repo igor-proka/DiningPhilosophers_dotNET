@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
     <PackageReference Include="xunit" Version="2.4.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
@@ -24,6 +25,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DiningPhilosophers.Core\DiningPhilosophers.Core.csproj" />
+    <ProjectReference Include="..\..\src\DiningPhilosophers.Services\DiningPhilosophers.Services.csproj" />
+    <ProjectReference Include="..\..\src\DiningPhilosophers.Strategies\DiningPhilosophers.Strategies.csproj" />
+    <ProjectReference Include="..\..\src\DiningPhilosophers.Hosted\DiningPhilosophers.Hosted.csproj" />
   </ItemGroup>
 
 </Project>

@@ -17,6 +17,7 @@ namespace DiningPhilosophers.Services.Simulation
         {
             var result = new SimulationResult();
             result.TotalSteps = totalSteps;
+            result.TotalMilliseconds = totalSteps; // Для пошаговой версии мс не используются, но для совместимости
 
             // Meals
             result.TotalMeals = philosophers.Sum(p => metrics.GetPhilosopherMetrics(p.Name).MealsEaten);
@@ -43,6 +44,7 @@ namespace DiningPhilosophers.Services.Simulation
             long totalMilliseconds)
         {
             var result = new SimulationResult();
+            result.TotalMilliseconds = totalMilliseconds; // Сохраняем реальное время
             result.TotalSteps = (int)(totalMilliseconds / 1000);
 
             // Meals

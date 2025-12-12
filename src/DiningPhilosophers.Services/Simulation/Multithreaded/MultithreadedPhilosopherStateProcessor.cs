@@ -27,6 +27,20 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             IPhilosopherStrategy strategy,
             ThreadSafeForkAcquisitionManager acquisitionManager,
             IMultithreadedMetricsCollector metrics)
+            : this(philosopher, leftFork, rightFork, config, strategy, acquisitionManager, metrics, new Random())
+        {
+        }
+
+        // новый конструктор — добавлен параметр random для тестовой детерминированности
+        public MultithreadedPhilosopherStateProcessor(
+            Philosopher philosopher,
+            ThreadSafeFork leftFork,
+            ThreadSafeFork rightFork,
+            MultithreadedSimulationConfig config,
+            IPhilosopherStrategy strategy,
+            ThreadSafeForkAcquisitionManager acquisitionManager,
+            IMultithreadedMetricsCollector metrics,
+            Random random)
         {
             _philosopher = philosopher;
             _leftFork = leftFork;
@@ -35,7 +49,7 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             _strategy = strategy;
             _acquisitionManager = acquisitionManager;
             _metrics = metrics;
-            _random = new Random();
+            _random = random ?? new Random();
         }
 
         public async Task RunAsync(CancellationToken ct)
@@ -66,7 +80,7 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             }
         }
 
-        private async Task ProcessThinkingStateAsync(CancellationToken ct)
+        public async Task ProcessThinkingStateAsync(CancellationToken ct)
         {
             await Task.Delay(_philosopher.StepsRemaining, ct);
             _philosopher.State = PhilosopherState.Hungry;
@@ -77,7 +91,7 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             _metrics.StartWaiting(_philosopher.Name);
         }
 
-        private async Task ProcessHungryStateAsync(CancellationToken ct)
+        public async Task ProcessHungryStateAsync(CancellationToken ct)
         {
             // Создаем временные объекты Fork для стратегии
             var tempLeftFork = new Fork(_leftFork.Id) 
@@ -134,7 +148,7 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             // await Task.Delay(10, ct);
         }
 
-        private async Task ProcessEatingStateAsync(CancellationToken ct)
+        public async Task ProcessEatingStateAsync(CancellationToken ct)
         {
             await Task.Delay(_philosopher.StepsRemaining, ct);
             FinishEating();

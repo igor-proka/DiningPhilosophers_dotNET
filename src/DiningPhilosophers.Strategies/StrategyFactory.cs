@@ -15,7 +15,7 @@ namespace DiningPhilosophers.Strategies
             IEnumerable<Philosopher> philosophers, 
             IEnumerable<Fork> forks)
         {
-            IPhilosopherStrategy strategy = new NaiveStrategy();
+            IPhilosopherStrategy strategy = new HierarchyStrategy();
             ICoordinator? coordinator = null;
 
             if (useCoordinator)

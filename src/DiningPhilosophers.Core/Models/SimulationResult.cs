@@ -12,6 +12,7 @@ namespace DiningPhilosophers.Core.Models
     public class SimulationResult
     {
         public int TotalSteps { get; set; }
+        public long TotalMilliseconds { get; set; }
         public long TotalMeals { get; set; }
         public double ThroughputPer1000 { get; set; }
 
