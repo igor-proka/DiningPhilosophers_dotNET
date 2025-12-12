@@ -88,7 +88,7 @@ namespace DiningPhilosophers.Hosted
                     services.AddSingleton<SimulationResultCalculator>();
 
                     // Стратегия (без координатора)
-                    services.AddSingleton<IPhilosopherStrategy, NaiveStrategy>();
+                    services.AddSingleton<IPhilosopherStrategy, HierarchyStrategy>();
 
                     // Менеджер стола (вилки, философы)
                     services.AddSingleton<ITableManager, TableManager>();

@@ -50,13 +50,14 @@ namespace DiningPhilosophers.Services.Monitor
             Console.WriteLine("ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ МНОГОПОТОЧНОЙ СИМУЛЯЦИИ");
             Console.WriteLine(new string('=', 50));
 
-            int totalMs = result.TotalSteps * 1000;
-            Console.WriteLine($"Общее время симуляции: {result.TotalSteps} сек ({totalMs} мс)");
+            long totalMs = result.TotalMilliseconds; // Используем реальное время в мс
+            double totalSec = totalMs / 1000.0;
+            Console.WriteLine($"Общее время симуляции: {totalSec:0.##} сек ({totalMs} мс)");
             Console.WriteLine($"Всего съедено: {result.TotalMeals}");
 
             // --- Пропускная способность ---
             double throughputMs = result.TotalMeals / (double)totalMs;
-            double throughputSec = result.TotalMeals / (double)result.TotalSteps;
+            double throughputSec = result.TotalMeals / totalSec;
 
             Console.WriteLine($"\n>>> Пропускная способность");
             Console.WriteLine($"  meals/ms:  {throughputMs:0.#####}");

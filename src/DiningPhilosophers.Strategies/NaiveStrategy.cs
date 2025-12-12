@@ -26,8 +26,8 @@ namespace DiningPhilosophers.Strategies
             {
                 if (rightFork.State == ForkState.Available)
                     return PhilosopherAction.TakeRightFork;
-                else
-                    return PhilosopherAction.ReleaseLeftFork; // отпускаем левую, если правая занята
+                // else
+                //     return PhilosopherAction.ReleaseLeftFork; // отпускаем левую, если правая занята
             }
 
             return PhilosopherAction.None;

@@ -27,7 +27,7 @@ namespace DiningPhilosophers.App
             // Конфигурация симуляции
             var config = new SimulationConfig
             {
-                UseCoordinator = true,
+                UseCoordinator = false,
                 CoordinatorType = CoordinatorType.Semaphore
             };
 
