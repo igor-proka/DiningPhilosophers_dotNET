@@ -1,0 +1,51 @@
+1. Установите EF CLI (если ещё не):
+dotnet tool install --global dotnet-ef
+
+
+
+2. В корне решения создайте первую миграцию (указывать проект Persistence и startup проект Hosted):
+dotnet ef migrations add InitialCreate --project src/DiningPhilosophers.Persistence --startup-project src/DiningPhilosophers.Hosted
+
+dotnet ef migrations add InitialCreate `
+  --project src/DiningPhilosophers.Persistence `
+  --startup-project src/DiningPhilosophers.Hosted
+
+Примечание: startup-project — это проект, где находится appsettings.json и где зарегистрирован DbContext. 
+
+
+
+3. Примените миграцию:
+dotnet ef database update --project src/DiningPhilosophers.Persistence --startup-project src/DiningPhilosophers.Hosted
+
+dotnet ef database update `
+  --project src/DiningPhilosophers.Persistence `
+  --startup-project src/DiningPhilosophers.Hosted
+
+
+
+4. Запустить Hosted приложение:
+dotnet run --project src/DiningPhilosophers.Hosted
+
+
+
+5. Проверьте таблицы в PostgreSQL (psql) или в PgAdmin:
+\d public.simulationruns
+\d public.philosopherstateevents
+\d public.forkstateevents
+
+select count(*) from "PhilosopherStateEvents";
+select count(*) from "ForkStateEvents";
+select count(*) from "Runs";
+select * from "PhilosopherStateEvents" order by "TimestampUtc" desc limit 10;
+select * from "ForkStateEvents" order by "TimestampUtc" desc limit 10;
+
+
+
+6. Отслеживание в .View:
+dotnet run --project src/DiningPhilosophers.View -- --runId <GUID_FROM_CONSOLE> --delay 5.5
+
+--delay — смещение в секундах от начала запуска (Run.StartedAtUtc).
+
+Примеры:
+d4f32760-2eb5-432c-8641-d3544b66fc18
+aaf62a87-7b96-45b2-808c-31247ace1ec3

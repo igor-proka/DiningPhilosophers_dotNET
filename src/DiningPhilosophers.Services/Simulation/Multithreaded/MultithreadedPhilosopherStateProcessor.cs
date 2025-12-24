@@ -5,6 +5,8 @@ using DiningPhilosophers.Core.Contracts.Monitor;
 using DiningPhilosophers.Core.Contracts.Strategies;
 using DiningPhilosophers.Core.Models;
 using DiningPhilosophers.Services.Simulation;
+using DiningPhilosophers.Persistence;
+using DiningPhilosophers.Persistence.Entities;
 
 namespace DiningPhilosophers.Services.Simulation.Multithreaded
 {
@@ -18,20 +20,50 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
         private readonly ThreadSafeFork _leftFork;
         private readonly ThreadSafeFork _rightFork;
         private readonly Philosopher _philosopher;
+        public string Name => _philosopher?.Name ?? "UNKNOWN";
+
+        // Для persistence
+        private ISimulationPersistence? _persistence;
+        private Guid _runId;
+        private PhilosopherState? _previousPhilosopherState;
+        private int _previousStepsRemaining;
+        private bool _previousHasLeftFork;
+        private bool _previousHasRightFork;
+        private PhilosopherAction _previousCurrentAction;
+        private ForkState? _previousLeftForkState;
+        private ForkState? _previousRightForkState;
+        private string? _previousLeftOwner;
+        private string? _previousRightOwner;
+
+        // Static seed для уникальных Random экземпляров среди философов
+        private static int _seed = Environment.TickCount;
 
         public MultithreadedPhilosopherStateProcessor(
-            Philosopher philosopher,
-            ThreadSafeFork leftFork,
-            ThreadSafeFork rightFork,
-            MultithreadedSimulationConfig config,
-            IPhilosopherStrategy strategy,
-            ThreadSafeForkAcquisitionManager acquisitionManager,
-            IMultithreadedMetricsCollector metrics)
-            : this(philosopher, leftFork, rightFork, config, strategy, acquisitionManager, metrics, new Random())
+            Philosopher philosopher, ThreadSafeFork leftFork, ThreadSafeFork rightFork,
+            MultithreadedSimulationConfig config, IPhilosopherStrategy strategy,
+            ThreadSafeForkAcquisitionManager acquisitionManager, IMultithreadedMetricsCollector metrics)
         {
+            _philosopher = philosopher;
+            _leftFork = leftFork;
+            _rightFork = rightFork;
+            _config = config;
+            _strategy = strategy;
+            _acquisitionManager = acquisitionManager;
+            _metrics = metrics;
+
+            // Уникальное случайное начальное значение для этого экземпляра во избежание синхронизации
+            _random = new Random(Interlocked.Increment(ref _seed));
+
+            // Инициализация начальных состояний философов
+            _philosopher.State = PhilosopherState.Thinking;
+            _philosopher.StepsRemaining = _random.Next(_config.ThinkingTimeMin, _config.ThinkingTimeMax + 1);
+            Console.WriteLine($"Initialized { _philosopher.Name } with initial steps: { _philosopher.StepsRemaining }");
+
+            // Инициализация предыдущих состояний для обнаружения изменений
+            UpdatePreviousStates();
         }
 
-        // новый конструктор — добавлен параметр random для тестовой детерминированности
+        // Новый конструктор (для тестов) — добавлен параметр random для тестовой детерминированности
         public MultithreadedPhilosopherStateProcessor(
             Philosopher philosopher,
             ThreadSafeFork leftFork,
@@ -52,6 +84,12 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             _random = random ?? new Random();
         }
 
+        public void SetPersistence(ISimulationPersistence persistence, RunContext runContext)
+        {
+            _persistence = persistence;
+            _runId = runContext.RunId;
+        }
+
         public async Task RunAsync(CancellationToken ct)
         {
             // Инициализация
@@ -66,29 +104,43 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
 
         private async Task ProcessStateAsync(CancellationToken ct)
         {
-            switch (_philosopher.State)
+            while (!ct.IsCancellationRequested)
             {
-                case PhilosopherState.Thinking:
-                    await ProcessThinkingStateAsync(ct);
-                    break;
-                case PhilosopherState.Hungry:
-                    await ProcessHungryStateAsync(ct);
-                    break;
-                case PhilosopherState.Eating:
-                    await ProcessEatingStateAsync(ct);
-                    break;
+                switch (_philosopher.State)
+                {
+                    case PhilosopherState.Thinking:
+                        await ProcessThinkingStateAsync(ct);
+                        break;
+                    case PhilosopherState.Hungry:
+                        await ProcessHungryStateAsync(ct);
+                        break;
+                    case PhilosopherState.Eating:
+                        await ProcessEatingStateAsync(ct);
+                        break;
+                }
+
+                // Записываем, если есть какие-то изменения
+                await LogIfChangedAsync();
+
+                // Небольшая задержка для избежания busy looping
+                // await Task.Delay(1, ct);
             }
         }
 
         public async Task ProcessThinkingStateAsync(CancellationToken ct)
         {
-            await Task.Delay(_philosopher.StepsRemaining, ct);
-            _philosopher.State = PhilosopherState.Hungry;
-            _philosopher.CurrentAction = PhilosopherAction.None;
-            _philosopher.StepsRemaining = 0;
-            
-            // Начинаем отсчет времени ожидания
-            _metrics.StartWaiting(_philosopher.Name);
+            if (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(_philosopher.StepsRemaining, ct);
+
+                _philosopher.State = PhilosopherState.Hungry;
+                _philosopher.CurrentAction = PhilosopherAction.None;
+
+                _philosopher.StepsRemaining = 0;
+
+                // Начинаем отсчет времени ожидания
+                _metrics.StartWaiting(_philosopher.Name);
+            }
         }
 
         public async Task ProcessHungryStateAsync(CancellationToken ct)
@@ -150,8 +202,11 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
 
         public async Task ProcessEatingStateAsync(CancellationToken ct)
         {
-            await Task.Delay(_philosopher.StepsRemaining, ct);
-            FinishEating();
+            if (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(_philosopher.StepsRemaining, ct);
+                FinishEating();
+            }
         }
 
         private Task StartEatingAsync(CancellationToken ct)
@@ -182,6 +237,68 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             _philosopher.State = PhilosopherState.Thinking;
             _philosopher.StepsRemaining = _random.Next(_config.ThinkingTimeMin, _config.ThinkingTimeMax + 1);
             _philosopher.CurrentAction = PhilosopherAction.None;
+        }
+
+        private async Task LogIfChangedAsync()
+        {
+            if (_persistence == null) return;
+
+            bool philosopherChanged = _philosopher.State != _previousPhilosopherState ||
+                                      _philosopher.StepsRemaining != _previousStepsRemaining ||
+                                      _philosopher.HasLeftFork != _previousHasLeftFork ||
+                                      _philosopher.HasRightFork != _previousHasRightFork ||
+                                      _philosopher.CurrentAction != _previousCurrentAction;
+
+            bool leftForkChanged = _leftFork.State != _previousLeftForkState || _leftFork.Owner != _previousLeftOwner;
+            bool rightForkChanged = _rightFork.State != _previousRightForkState || _rightFork.Owner != _previousRightOwner;
+
+            if (philosopherChanged)
+            {
+                await _persistence.LogPhilosopherEventAsync(_runId, new PhilosopherStateEvent
+                {
+                    PhilosopherName = _philosopher.Name,
+                    State = _philosopher.State.ToString(),
+                    StepsRemaining = _philosopher.StepsRemaining,
+                    HasLeftFork = _philosopher.HasLeftFork,
+                    HasRightFork = _philosopher.HasRightFork,
+                    CurrentAction = _philosopher.CurrentAction.ToString()
+                });
+            }
+
+            if (leftForkChanged)
+            {
+                await _persistence.LogForkEventAsync(_runId, new ForkStateEvent
+                {
+                    ForkNumber = _leftFork.Id,
+                    State = _leftFork.State.ToString(),
+                    Owner = _leftFork.Owner
+                });
+            }
+
+            if (rightForkChanged)
+            {
+                await _persistence.LogForkEventAsync(_runId, new ForkStateEvent
+                {
+                    ForkNumber = _rightFork.Id,
+                    State = _rightFork.State.ToString(),
+                    Owner = _rightFork.Owner
+                });
+            }
+
+            UpdatePreviousStates();
+        }
+
+        private void UpdatePreviousStates()
+        {
+            _previousPhilosopherState = _philosopher.State;
+            _previousStepsRemaining = _philosopher.StepsRemaining;
+            _previousHasLeftFork = _philosopher.HasLeftFork;
+            _previousHasRightFork = _philosopher.HasRightFork;
+            _previousCurrentAction = _philosopher.CurrentAction;
+            _previousLeftForkState = _leftFork.State;
+            _previousRightForkState = _rightFork.State;
+            _previousLeftOwner = _leftFork.Owner;
+            _previousRightOwner = _rightFork.Owner;
         }
     }
 }
