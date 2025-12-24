@@ -13,8 +13,9 @@ namespace DiningPhilosophers.Hosted.Services.Philosophers
                     IOptions<MultithreadedSimulationConfig> configOptions,
                     IPhilosopherStrategy strategy, 
                     ThreadSafeForkAcquisitionManager acquisitionManager, 
-                    IMultithreadedMetricsCollector metrics)
-            : base(tableManager, configOptions, strategy, acquisitionManager, metrics, "Платон")
+                    IMultithreadedMetricsCollector metrics,
+                    IServiceProvider serviceProvider)
+            : base(tableManager, configOptions, strategy, acquisitionManager, metrics, "Платон", serviceProvider)
         {
         }
     }
