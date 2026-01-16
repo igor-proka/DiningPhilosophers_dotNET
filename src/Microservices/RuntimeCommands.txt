@@ -1,0 +1,44 @@
+1. Запуск всей системы через Docker Compose:
+
+docker-compose build  # Если изменения в коде, перестройте
+docker-compose build --no-cache
+docker-compose up -d  # Запуск в фоне (-d), или без -d для логов в консоли
+
+
+
+2. Мониторинг и просмотр происходящего:
+
+Логи всех сервисов:
+docker-compose logs -f  # -f для follow (real-time)
+
+Или для конкретного:
+docker-compose logs -f philosopher-plato
+
+RabbitMQ UI: http://localhost:15672 — смотрите queues, exchanges.
+Должны появляться hungry-queue и decision-*-queue. Rate сообщений покажет активность.
+
+API тестирование (пока система работает):
+TableService: curl http://localhost:8080/api/forks/action -H "Content-Type: application/json" -d '{"ForkId":"1","Action":0,"PhilosopherName":"Test"}' (0=Take, 1=Release).
+Если 200 OK — вилка взята/освобождена.
+
+
+Запуск системы:
+bash
+docker-compose down
+docker-compose build --no-cache
+docker-compose up
+После запуска можно:
+
+Проверить здоровье стола: http://localhost:8080/api/health
+
+Посмотреть состояние вилок: http://localhost:8080/api/forks
+
+Проверить метрики: http://localhost:8080/api/metrics/summary
+
+RabbitMQ management: http://localhost:15672 (guest/guest)
+
+
+3. Остановка:
+
+docker-compose down
+docker stop rabbitmq && docker rm rabbitmq  # Если отдельно запускали

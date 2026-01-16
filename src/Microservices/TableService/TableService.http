@@ -1,0 +1,6 @@
+@TableService_HostAddress = http://localhost:5193
+
+GET {{TableService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,124 @@
+version: '3.8'
+services:
+  rabbitmq:  # Это и есть Message Broker сервис
+    image: rabbitmq:3-management  # Официальный образ с веб-интерфейсом (порт 15672 для мониторинга)
+    ports:
+      - "5672:5672"  # Порт для AMQP (сообщения)
+      - "15672:15672"  # Порт для management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  table-service:
+    build:
+      context: .  # Корень репозитория
+      dockerfile: src/Microservices/TableService/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  coordinator-service:
+    build:
+      context: .
+      dockerfile: src/Microservices/CoordinatorService/Dockerfile
+    ports:
+      - "8086:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  philosopher-plato:
+    build:
+      context: .
+      dockerfile: src/Microservices/PhilosopherService/Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - PhilosopherName=Платон
+      - LeftForkId=5
+      - RightForkId=1
+      - TableServiceUrl=http://table-service:8080
+    depends_on:
+      - table-service
+      - coordinator-service
+      - rabbitmq
+
+  philosopher-aristotle:
+    build:
+      context: .
+      dockerfile: src/Microservices/PhilosopherService/Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - PhilosopherName=Аристотель
+      - LeftForkId=1
+      - RightForkId=2
+      - TableServiceUrl=http://table-service:8080
+    depends_on:
+      - table-service
+      - coordinator-service
+      - rabbitmq
+
+  philosopher-socrates:
+    build:
+      context: .
+      dockerfile: src/Microservices/PhilosopherService/Dockerfile
+    ports:
+      - "8083:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - PhilosopherName=Сократ
+      - LeftForkId=2
+      - RightForkId=3
+      - TableServiceUrl=http://table-service:8080
+    depends_on:
+      - table-service
+      - coordinator-service
+      - rabbitmq
+  
+  philosopher-descartes:
+    build:
+      context: .
+      dockerfile: src/Microservices/PhilosopherService/Dockerfile
+    ports:
+      - "8084:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - PhilosopherName=Декарт
+      - LeftForkId=3
+      - RightForkId=4
+      - TableServiceUrl=http://table-service:8080
+    depends_on:
+      - table-service
+      - coordinator-service
+      - rabbitmq
+
+  philosopher-kant:
+    build:
+      context: .
+      dockerfile: src/Microservices/PhilosopherService/Dockerfile
+    ports:
+      - "8085:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - PhilosopherName=Кант
+      - LeftForkId=4
+      - RightForkId=5
+      - TableServiceUrl=http://table-service:8080
+    depends_on:
+      - table-service
+      - coordinator-service
+      - rabbitmq

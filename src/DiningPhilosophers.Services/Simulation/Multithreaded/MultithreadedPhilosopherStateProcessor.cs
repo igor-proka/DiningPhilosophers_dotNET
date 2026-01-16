@@ -38,11 +38,21 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
         // Static seed для уникальных Random экземпляров среди философов
         private static int _seed = Environment.TickCount;
 
+        public Philosopher Philosopher { get; }
+        public ThreadSafeFork LeftFork { get; }
+        public ThreadSafeFork RightFork { get; }
+        public IMultithreadedMetricsCollector Metrics { get; }
+
         public MultithreadedPhilosopherStateProcessor(
             Philosopher philosopher, ThreadSafeFork leftFork, ThreadSafeFork rightFork,
             MultithreadedSimulationConfig config, IPhilosopherStrategy strategy,
             ThreadSafeForkAcquisitionManager acquisitionManager, IMultithreadedMetricsCollector metrics)
         {
+            Philosopher = philosopher ?? throw new ArgumentNullException(nameof(philosopher));
+            LeftFork = leftFork ?? throw new ArgumentNullException(nameof(leftFork));
+            RightFork = rightFork ?? throw new ArgumentNullException(nameof(rightFork));
+            Metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
+            
             _philosopher = philosopher;
             _leftFork = leftFork;
             _rightFork = rightFork;
@@ -74,6 +84,11 @@ namespace DiningPhilosophers.Services.Simulation.Multithreaded
             IMultithreadedMetricsCollector metrics,
             Random random)
         {
+            Philosopher = philosopher ?? throw new ArgumentNullException(nameof(philosopher));
+            LeftFork = leftFork ?? throw new ArgumentNullException(nameof(leftFork));
+            RightFork = rightFork ?? throw new ArgumentNullException(nameof(rightFork));
+            Metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
+
             _philosopher = philosopher;
             _leftFork = leftFork;
             _rightFork = rightFork;
