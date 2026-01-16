@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DiningPhilosophers.Core\DiningPhilosophers.Core.csproj" />
+    <ProjectReference Include="..\DiningPhilosophers.Services\DiningPhilosophers.Services.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

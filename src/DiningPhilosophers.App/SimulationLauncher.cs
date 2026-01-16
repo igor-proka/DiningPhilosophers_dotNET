@@ -72,7 +72,7 @@ namespace DiningPhilosophers.App
             var config = new MultithreadedSimulationConfig();
 
             // В многопоточной версии не используем координатор
-            var strategy = new NaiveStrategy();
+            var strategy = new HierarchyStrategy();
 
             var monitor = new MultithreadedConsoleMonitor(config.DisplayInterval);
 

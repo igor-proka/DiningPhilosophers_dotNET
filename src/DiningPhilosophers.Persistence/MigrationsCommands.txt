@@ -33,9 +33,9 @@ dotnet run --project src/DiningPhilosophers.Hosted
 \d public.philosopherstateevents
 \d public.forkstateevents
 
-select count(*) from "PhilosopherStateEvents";
-select count(*) from "ForkStateEvents";
-select count(*) from "Runs";
+select * from "PhilosopherStateEvents";
+select * from "ForkStateEvents";
+select * from "Runs";
 select * from "PhilosopherStateEvents" order by "TimestampUtc" desc limit 10;
 select * from "ForkStateEvents" order by "TimestampUtc" desc limit 10;
 
